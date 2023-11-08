@@ -13,6 +13,17 @@ class Translatable:
     prop: str
     text: str
 
+    # Class-level list to store instances
+    instances = []
+
+    def __init__(self, id, prop, text):
+        self.id = id
+        self.prop = prop
+        self.text = text
+
+        # Add the instance to the class-level list
+        Translatable.instances.append(self)
+
     def to_dict(self):
         return self.__dict__
 
@@ -25,9 +36,6 @@ class Translatable:
 title = Translatable('title', 'children', 'Just a title to translate.')
 body = Translatable('content', 'children', 'What if this content would be translatable to 31 languages?')
 btn = Translatable('button_1', 'children', 'click to change language')
-
-# group instances into list
-list_to_translate = [title, body, btn]
 
 # initiate app
 app = dash.Dash(
@@ -73,14 +81,14 @@ app.layout = html.Div(
 
 
 @app.callback(
-    [Output(obj.id, obj.prop) for obj in list_to_translate],
+    [Output(obj.id, obj.prop) for obj in Translatable.instances],
     Input(btn.id, 'n_clicks'),
     State('language_selector', 'value'),
     prevent_initial_call=True
 )
 def do(_, language):
     if language == 'EN':
-        return [obj.text for obj in list_to_translate]
+        return [obj.text for obj in Translatable.instances]
 
     # ^^ base language is english (EN)
 
@@ -88,7 +96,7 @@ def do(_, language):
     def language_check(arg: str):
         print('got cached: ', arg)
         return translator.backbone.translate_text(
-            text=[obj.text for obj in list_to_translate],
+            text=[obj.text for obj in Translatable.instances],
             target_lang=arg
         ), uuid.uuid4()
         # ^^ I added a for debugging the memoize function
